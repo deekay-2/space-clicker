@@ -16,6 +16,10 @@ class SpaceClicker:
         self.game_running = False
         self.start_time = None
 
+        # Reaction time tracking
+        self.last_appearance_time = None
+        self.reaction_times = []
+
         # Create a canvas with a space‑like background color
         self.canvas = tk.Canvas(root, width=500, height=350, bg="#0b0f29")
         self.canvas.pack()
@@ -51,6 +55,10 @@ class SpaceClicker:
         self.game_running = True
         self.start_time = time.time()
 
+        # Reset reaction time tracking
+        self.reaction_times = []
+        self.last_appearance_time = None
+
         self.score_label.config(text="Score: 0")
         self.info_label.config(text="Click the star as fast as you can!")
 
@@ -60,12 +68,20 @@ class SpaceClicker:
         # Place the target in the center to start
         self.canvas.create_window(250, 170, window=self.target_button, tags="target")
 
+        # Record the first appearance time
+        self.last_appearance_time = time.time()
+
         # Start the timer loop
         self.update_timer()
 
     def on_target_click(self):
         if not self.game_running:
             return
+
+        # Calculate reaction time
+        if self.last_appearance_time is not None:
+            reaction = time.time() - self.last_appearance_time
+            self.reaction_times.append(reaction)
 
         # Increase score
         self.score += 1
@@ -82,6 +98,9 @@ class SpaceClicker:
         y = random.randint(60, 300)
 
         self.canvas.create_window(x, y, window=self.target_button, tags="target")
+
+        # Record the time the target appears
+        self.last_appearance_time = time.time()
 
     def update_timer(self):
         if not self.game_running:
@@ -101,7 +120,15 @@ class SpaceClicker:
         self.game_running = False
         self.canvas.delete("target")
 
-        self.info_label.config(text=f"Game Over! Final Score: {self.score}")
+        # Calculate average reaction time
+        if self.reaction_times:
+            avg_reaction = sum(self.reaction_times) / len(self.reaction_times)
+            avg_reaction = round(avg_reaction, 3)
+            self.info_label.config(
+                text=f"Game Over! Score: {self.score} | Avg Reaction: {avg_reaction}s"
+            )
+        else:
+            self.info_label.config(text=f"Game Over! Final Score: {self.score}")
 
         # Bring back the play button so they can try again
         self.canvas.create_window(250, 170, window=self.play_button)
